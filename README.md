@@ -33,7 +33,7 @@ Docker Compose for deploying [Uptime Kuma](https://github.com/louislam/uptime-ku
 1. Clone/Download the Repository
 
 2. Configure Environment Variables
-   1. Copy `.example.env` to `.env`
+   1. `cp .example.env .env`
    2. Change values in `.env` to yours
 
 3. `docker compose up -d`
