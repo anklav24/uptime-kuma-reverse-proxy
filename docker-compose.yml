@@ -1,0 +1,47 @@
+services:
+  traefik:
+    image: traefik:v3.5.4
+    container_name: traefik
+    restart: always
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - uptime_kuma
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.0.2
+    container_name: uptime-kuma
+    restart: always
+    expose:
+      - "3001"
+    volumes:
+      - kuma_data:/app/data
+    networks:
+      - uptime_kuma
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kuma.rule=Host(`${KUMA_DOMAIN}`)"
+      - "traefik.http.routers.kuma.entrypoints=websecure"
+      - "traefik.http.routers.kuma.tls=true"
+      - "traefik.http.routers.kuma.tls.certresolver=letsencrypt"
+      - "traefik.http.services.kuma.loadbalancer.server.port=3001"
+
+networks:
+  uptime_kuma:
+    driver: bridge
+
+volumes:
+  letsencrypt:
+  kuma_data:
