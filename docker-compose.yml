@@ -1,10 +1,24 @@
 services:
+  3x-ui:
+    image: ghcr.io/mhsanaei/3x-ui:latest
+    container_name: 3x-ui
+    restart: always
+    ports:
+      - "443:443"                    # Xray VLESS Reality / XHTTP
+      - "127.0.0.1:2053:2053"       # 3X-UI panel (localhost — SSH tunnel)
+    volumes:
+      - 3xui_data:/etc/x-ui
+    networks:
+      - uptime_kuma
+
   traefik:
     image: traefik:v3.6.1
     container_name: traefik
     restart: always
     command:
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
       - "--entrypoints.websecure.address=:443"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -13,7 +27,7 @@ services:
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
     ports:
       - "80:80"
-      - "443:443"
+      # Port 443 НЕ проброшен на хост — Xray направляет сюда fallback-трафик внутри Docker-сети
     volumes:
       - letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -45,3 +59,4 @@ networks:
 volumes:
   letsencrypt:
   kuma_data:
+  3xui_data:
